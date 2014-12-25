@@ -16,7 +16,7 @@ class http_request:
             content = r.text
             for c in r.cookies:
                 self.cookies.set_cookie(c)
-        except Exception, e:
+        except (Exception, e) as e:
             resp = {'status': 600}
             content = 'HttpHelper: %s' % e
         return resp, content
@@ -29,7 +29,7 @@ class http_request:
             content = r.text
             for c in r.cookies:
                 self.cookies.set_cookie(c)
-        except Exception, e:
+        except (Exception, e) as e:
             resp = {'status': 600}
             content = 'HttpHelper: %s' % e
         return resp, content
@@ -41,7 +41,7 @@ class http_request:
             content = r.text
             for c in r.cookies:
                 self.cookies.set_cookie(c)
-        except Exception, e:
+        except (Exception, e) as e:
             resp = {'status': 600}
             content = 'HttpHelper: %s' % e
         return resp, content
@@ -49,4 +49,4 @@ class http_request:
 if __name__ == "__main__":
     http = http_request()
     resp, ret = http.get("http://www.baidu.com")
-    print ret
+    print(ret)
