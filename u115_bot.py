@@ -6,6 +6,11 @@ import logging
 import getopt
 import os
 import sys
+import shutil
+import tempfile
+import time
+import datetime
+import codecs
 # import imp
 # imp.reload(sys)
 # sys.setdefaultencoding('utf-8')
@@ -15,18 +20,23 @@ from u115_api import u115_api
 arg_user = None
 arg_pass = None
 arg_sleeptime = 120
-asg_folder = None
+arg_folder = None
+
 
  
 def update_task_success(context):
-    return open('tasksuccess.txt', 'a').write(context + '\n')
+    return codecs.open('tasksuccess.txt', 'a', "utf-8").write(str(datetime.datetime.now()) + ' : ' + context + '\n')
 
 def update_task_error(context):
-    return open('taskerror.txt', 'a').write(context + '\n')
+    return codecs.open('taskerror.txt', 'a', "utf-8").write(str(datetime.datetime.now()) + ' : ' + context + '\n')
 
 def get_torrent_files():
-    global asg_folder
-    return [f for f in os.listdir(asg_folder ) if (os.path.isfile(f) and f.find('.torrent') != -1) ] 
+    global arg_folder
+    return [f for f in os.listdir(arg_folder ) if (os.path.isfile(f) and f.find('.torrent') != -1) ] 
+
+def copy_torrent_tmp_file(torrent, tempFolder):
+    copyTo = os.path.join(tempFolder, '',  str(int(time.time())) + '.torrent' )
+    return shutil.copyfile(torrent,copyTo)
 
 def monitor():
     global arg_pass
@@ -36,18 +46,22 @@ def monitor():
     u115 = u115_api()
     u115.login(arg_user, arg_pass)
     torrents = get_torrent_files();
+    tempFolder = tempfile.mkdtemp();
 
-
-    logging.info('find Number of torrent %s in %s' % (len(torrents) , asg_folder) )
-
-    for torrent in torrents:
-        logging.info('\n************** adding torrent %s **************\n' % torrent)
-        ret = u115.add_torrent_task(torrent)
-        if ret : 
-            os.remove(torrent)
-            update_task_success('Torrent (%s) Added Success' % (torrent))
-        else :
-            update_task_error('Torrent (%s) Added Failed' % (torrent))
+    logging.info('find Number of torrent %s in %s' % (len(torrents) , arg_folder) )
+    try : 
+        for torrent in torrents:
+                logging.info('\n************** adding torrent %s **************\n' % torrent)
+                tmpFile = copy_torrent_tmp_file(torrent,tempFolder)
+                ret = u115.add_torrent_task(tmpFile)
+                if ret : 
+                    os.remove(torrent)
+                    update_task_success('Torrent (%s) Added Success' % (torrent))
+                else :
+                    update_task_error('Torrent (%s) Added Failed' % (torrent))
+    finally :
+        logging.info('clearing temp folder %s' % tempFolder)
+        shutil.rmtree(tempFolder)
 
     input("Press Enter to continue...")
  
@@ -67,7 +81,7 @@ def main(argv):
     global arg_pass
     global arg_user
     global arg_sleeptime
-    global asg_folder
+    global arg_folder
 
     try:
         opts, args = getopt.getopt(argv[1:], 'u:p:f:v:h', ['user=', 'pass=', 'file=', 'help', 'version'])
@@ -88,7 +102,7 @@ def main(argv):
         elif o in ('-p', '--pass'):
             arg_pass = a
         elif o in ('-f', '--folder'):
-            asg_folder = a
+            arg_folder = a
         else:
             print('unhandled option')
             sys.exit(1)
@@ -100,7 +114,7 @@ def main(argv):
         print('missing arg -p')
         sys.exit(2)
 
-    asg_folder = asg_folder or '.'
+    arg_folder = arg_folder or '.'
     monitor()
 
 if __name__ == '__main__':

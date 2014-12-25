@@ -168,8 +168,10 @@ class u115_api:
         #step.3
         #模擬flash提交插件把種子傳上去
         torrent_file_name = os.path.basename(torrent_file_path)
+        # print(torrent_file_path.encode('utf-8'))
+        # return False
         post_url = url
-        params = {'Filename': (None, torrent_file_name), 'target': (None, 'U_1_' + cid),
+        params = {'Filename': (None, torrent_file_name.encode('utf-8')), 'target': (None, 'U_1_' + cid),
                   'Filedata': (torrent_file_name, open(torrent_file_path, 'rb'), 'application/octet-stream'),
                   'Upload': (None, 'Submit Query')}
         resp, ret = self.http.upload(post_url, files=params)
@@ -181,6 +183,9 @@ class u115_api:
         #step.4
         #還要傳一個地方..
         url = WEB_API_URL + '/files/file'
+        if 'data' not in ret :
+            logging.error('%s 上傳種子出錯:%s' % (torrent_file_name, ret['message'].encode('utf-8')))
+            return False
         data = {'file_id': ret['data']['file_id']}
         resp, ret = self.http.post(url, data)
         ret = json.loads(ret)
