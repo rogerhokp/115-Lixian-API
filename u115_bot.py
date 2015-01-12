@@ -32,11 +32,13 @@ def update_task_error(context):
 
 def get_torrent_files():
     global arg_folder
-    return [f for f in os.listdir(arg_folder ) if (os.path.isfile(f) and f.find('.torrent') != -1) ] 
+    return [f for f in os.listdir(arg_folder ) if ( os.path.isfile(os.path.join(arg_folder, f)) and f.find('.torrent') != -1) ] 
 
 def copy_torrent_tmp_file(torrent, tempFolder):
+    global arg_folder
     copyTo = os.path.join(tempFolder, '',  str(int(time.time())) + '.torrent' )
-    return shutil.copyfile(torrent,copyTo)
+    shutil.copyfile(os.path.join(arg_folder, torrent),copyTo)
+    return copyTo
 
 def monitor():
     global arg_pass
@@ -55,7 +57,7 @@ def monitor():
                 tmpFile = copy_torrent_tmp_file(torrent,tempFolder)
                 ret = u115.add_torrent_task(tmpFile)
                 if ret : 
-                    os.remove(torrent)
+                    os.remove(os.path.join(arg_folder, torrent))
                     update_task_success('Torrent (%s) Added Success' % (torrent))
                 else :
                     update_task_error('Torrent (%s) Added Failed' % (torrent))
